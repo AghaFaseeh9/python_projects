@@ -1,0 +1,12 @@
+[project]
+name = "mood-tracker"
+version = "0.1.0"
+description = "A comprehensive mood tracking application with analytics and visualization"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "pandas>=2.2.3",
+    "streamlit>=1.44.1",
+    "plotly>=5.19.0",
+    "openpyxl>=3.1.2",
+]
