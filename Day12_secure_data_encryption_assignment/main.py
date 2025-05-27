@@ -64,10 +64,10 @@ if choice == "Home":
     st.subheader("🏠 Welcome")
     st.write("Use this app to **securely store and retrieve data** with a unique passkey.")
     st.write("### Features:")
-    st.write("- 🔐 Secure encryption using Fernet (symmetric encryption)")
-    st.write("- 🔑 Password-protected data storage")
-    st.write("- 🔒 Master password protection")
-    st.write("- ⚠️ Limited login attempts")
+    st.write("• 🔐 Secure encryption using Fernet (symmetric encryption)")
+    st.write("• 🔑 Password-protected data storage")
+    st.write("• 🔒 Master password protection")
+    st.write("• ⚠️ Limited login attempts")
 
 elif choice == "Store Data":
     st.subheader("📂 Store Data")
