@@ -1,17 +1,10 @@
 import streamlit as st
 import hashlib
-import logging
 from pathlib import Path
-
-# Set up logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
 
 try:
     from cryptography.fernet import Fernet
-    logger.info("Successfully imported cryptography.fernet")
-except ImportError as e:
-    logger.error(f"Failed to import cryptography.fernet: {str(e)}")
+except ImportError:
     st.error("Failed to import required cryptography module. Please check the logs for details.")
     st.stop()
 
@@ -32,9 +25,7 @@ if "cipher" not in st.session_state:
             with open(key_file, "wb") as f:
                 f.write(KEY)
         st.session_state.cipher = Fernet(KEY)
-        logger.info("Successfully initialized encryption")
     except Exception as e:
-        logger.error(f"Failed to initialize encryption: {str(e)}")
         st.error("Failed to initialize encryption system. Please check the logs for details.")
         st.stop()
 
@@ -50,8 +41,7 @@ def hash_passkey(passkey):
 def encrypt_data(text):
     try:
         return st.session_state.cipher.encrypt(text.encode()).decode()
-    except Exception as e:
-        logger.error(f"Encryption failed: {str(e)}")
+    except Exception:
         st.error("Failed to encrypt data. Please try again.")
         return None
 
@@ -65,8 +55,7 @@ def decrypt_data(encrypted_text, passkey):
                 return st.session_state.cipher.decrypt(encrypted_text.encode()).decode()
         st.session_state.failed_attempts += 1
         return None
-    except Exception as e:
-        logger.error(f"Decryption failed: {str(e)}")
+    except Exception:
         st.error("Failed to decrypt data. Please check your input and try again.")
         return None
 
