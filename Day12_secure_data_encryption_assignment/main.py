@@ -1,19 +1,48 @@
 import streamlit as st
 import hashlib
-from cryptography.fernet import Fernet
+import sys
+import logging
+import os
+from pathlib import Path
 
-# Generate a key (in production, this should be securely stored)
-KEY = Fernet.generate_key()
-cipher = Fernet(KEY)
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+try:
+    from cryptography.fernet import Fernet
+    logger.info("Successfully imported cryptography.fernet")
+except ImportError as e:
+    logger.error(f"Failed to import cryptography.fernet: {str(e)}")
+    st.error("Failed to import required cryptography module. Please check the logs for details.")
+    st.stop()
 
 # Initialize session state for security
 if "failed_attempts" not in st.session_state:
     st.session_state.failed_attempts = 0
 if "authorized" not in st.session_state:
     st.session_state.authorized = True
+if "cipher" not in st.session_state:
+    try:
+        # Try to load existing key or generate new one
+        key_file = Path("encryption_key.key")
+        if key_file.exists():
+            with open(key_file, "rb") as f:
+                KEY = f.read()
+        else:
+            KEY = Fernet.generate_key()
+            with open(key_file, "wb") as f:
+                f.write(KEY)
+        st.session_state.cipher = Fernet(KEY)
+        logger.info("Successfully initialized encryption")
+    except Exception as e:
+        logger.error(f"Failed to initialize encryption: {str(e)}")
+        st.error("Failed to initialize encryption system. Please check the logs for details.")
+        st.stop()
 
 # In-memory data store
-stored_data = {}
+if "stored_data" not in st.session_state:
+    st.session_state.stored_data = {}
 
 # Hash passkey
 def hash_passkey(passkey):
@@ -21,17 +50,27 @@ def hash_passkey(passkey):
 
 # Encrypt
 def encrypt_data(text):
-    return cipher.encrypt(text.encode()).decode()
+    try:
+        return st.session_state.cipher.encrypt(text.encode()).decode()
+    except Exception as e:
+        logger.error(f"Encryption failed: {str(e)}")
+        st.error("Failed to encrypt data. Please try again.")
+        return None
 
 # Decrypt
 def decrypt_data(encrypted_text, passkey):
-    hashed_passkey = hash_passkey(passkey)
-    for key, value in stored_data.items():
-        if key == encrypted_text and value["passkey"] == hashed_passkey:
-            st.session_state.failed_attempts = 0
-            return cipher.decrypt(encrypted_text.encode()).decode()
-    st.session_state.failed_attempts += 1
-    return None
+    try:
+        hashed_passkey = hash_passkey(passkey)
+        for key, value in st.session_state.stored_data.items():
+            if key == encrypted_text and value["passkey"] == hashed_passkey:
+                st.session_state.failed_attempts = 0
+                return st.session_state.cipher.decrypt(encrypted_text.encode()).decode()
+        st.session_state.failed_attempts += 1
+        return None
+    except Exception as e:
+        logger.error(f"Decryption failed: {str(e)}")
+        st.error("Failed to decrypt data. Please check your input and try again.")
+        return None
 
 # Streamlit UI
 st.title("🔒 Secure Data Encryption System")
@@ -51,13 +90,14 @@ elif choice == "Store Data":
     if st.button("Encrypt & Save"):
         if user_data and passkey:
             encrypted_text = encrypt_data(user_data)
-            stored_data[encrypted_text] = {
-                "encrypted_text": encrypted_text,
-                "passkey": hash_passkey(passkey)
-            }
-            st.success("✅ Data stored securely!")
-            st.write("🔐 Encrypted Data (save this!):")
-            st.code(encrypted_text)
+            if encrypted_text:
+                st.session_state.stored_data[encrypted_text] = {
+                    "encrypted_text": encrypted_text,
+                    "passkey": hash_passkey(passkey)
+                }
+                st.success("✅ Data stored securely!")
+                st.write("🔐 Encrypted Data (save this!):")
+                st.code(encrypted_text)
         else:
             st.error("⚠️ Please enter both data and passkey.")
 
