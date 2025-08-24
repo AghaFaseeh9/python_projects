@@ -1,0 +1,16 @@
+[project]
+name = "ai-resume-analyzer"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "matplotlib>=3.10.5",
+    "pdfplumber>=0.11.7",
+    "pypdf2>=3.0.1",
+    "scikit-learn>=1.7.1",
+    "sentence-transformers>=5.1.0",
+    "spacy>=3.8.7",
+    "streamlit>=1.48.1",
+    "wordcloud>=1.9.4",
+]
